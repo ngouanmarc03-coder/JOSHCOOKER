@@ -1,7 +1,6 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const path = require('path');
 require('dotenv').config();
 
 const app = express();
@@ -10,14 +9,13 @@ const app = express();
 app.use(cors({ origin: '*' }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-app.use(express.static(path.join(__dirname, '..', 'frontend')));
 
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'frontend', 'index.html'));
+// Healthcheck Railway (OBLIGATOIRE)
+app.get('/railway-health', (req, res) => {
+  res.send('OK');
 });
 
-// Routes
+// Routes API
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/heroes', require('./routes/heroes'));
 app.use('/api/menus', require('./routes/menus'));
@@ -27,9 +25,10 @@ app.use('/api/settings', require('./routes/settings'));
 app.use('/api/users', require('./routes/users'));
 
 // MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI)
+mongoose.connect(process.env.MONGO_URI)
   .then(async () => {
-    console.log('MongoDB connecte avec succes');
+    console.log('MongoDB connecté avec succès');
+
     // Create default admin if not exists
     const User = require('./models/User');
     const bcrypt = require('bcryptjs');
@@ -44,8 +43,9 @@ mongoose.connect(process.env.MONGODB_URI)
         role: 'admin',
         isValidated: true
       });
-      console.log('Admin cree: admin@josuacooker.ci / admin2024');
+      console.log('Admin créé: admin@josuacooker.ci / admin2024');
     }
+
     // Create default settings
     const Settings = require('./models/Settings');
     const settings = await Settings.findOne();
@@ -69,21 +69,20 @@ mongoose.connect(process.env.MONGODB_URI)
         storyText: 'Ajoutez ici l’histoire du restaurant, du chef ou de votre passion.',
         storyDetails: ''
       });
-      console.log('Parametres par defaut crees');
+      console.log('Paramètres par défaut créés');
     }
 
     const Order = require('./models/Order');
     try {
       await Order.collection.dropIndex('numeroCommande_1');
-      console.log('Index numeroCommande_1 supprime du collection orders');
+      console.log('Index numeroCommande_1 supprimé');
     } catch (dropErr) {
       if (dropErr.codeName !== 'IndexNotFound') {
-        console.warn('Impossible de supprimer l index numeroCommande_1:', dropErr.message);
+        console.warn('Impossible de supprimer l’index numeroCommande_1:', dropErr.message);
       }
     }
   })
   .catch(err => console.error('Erreur MongoDB:', err));
 
-const PORT = process.env.PORT || 5000;
-const HOST = process.env.HOST || '0.0.0.0';
-app.listen(PORT, HOST, () => console.log(`Serveur demarre sur ${HOST}:${PORT}`));
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, () => console.log(`Serveur démarré sur le port ${PORT}`));
