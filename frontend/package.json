@@ -2,10 +2,7 @@
   "name": "josua-cooker-frontend",
   "version": "1.0.0",
   "scripts": {
-    "dev": "npx live-server --port=3000 --host=localhost --no-browser .",
-    "start": "npx live-server --port=3000 ."
-  },
-  "devDependencies": {
-    "live-server": "^1.2.2"
+    "build": "echo 'No build needed'",
+    "start": "echo 'Frontend static'"
   }
 }
