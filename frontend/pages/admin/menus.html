@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - Produits / Menu</title>
+  <link rel="stylesheet" href="../../css/style.css">
+  <link rel="stylesheet" href="../../css/admin.css">
+</head>
+<body>
+<div id="admin-wrapper" class="admin-layout">
+  <main class="admin-main">
+    <div class="admin-topbar">
+      <button class="sidebar-toggle"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+      <div class="topbar-title"><h1>Produits / Menu</h1><p>Gérez vos plats et catégories</p></div>
+      <div class="topbar-actions">
+        <button class="theme-toggle"></button>
+        <button class="btn-primary" onclick="openAddModal()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Nouveau plat
+        </button>
+      </div>
+    </div>
+    <div class="admin-content">
+      <div class="admin-card">
+        <div class="admin-card-header">
+          <h3>Tous les plats (<span id="menu-count">0</span>)</h3>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <input type="text" id="search-menu" placeholder="Rechercher..." style="padding:6px 12px;border:1px solid var(--gray-pale);border-radius:6px;font-size:13px;width:180px" oninput="filterTable()">
+            <select id="cat-filter" onchange="filterTable()" style="padding:6px 12px;border:1px solid var(--gray-pale);border-radius:6px;font-size:13px">
+              <option value="">Toutes catégories</option>
+            </select>
+          </div>
+        </div>
+        <div class="admin-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Image</th>
+                <th>Nom</th>
+                <th>Catégorie</th>
+                <th>Prix</th>
+                <th>Statut</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="menus-table">
+              <tr><td colspan="6" style="text-align:center;padding:40px"><div class="loader" style="margin:0 auto;border-color:var(--green-pale);border-top-color:var(--green)"></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="menu-modal">
+  <div class="modal" style="max-width:640px">
+    <button class="modal-close" onclick="closeModal()">&#10005;</button>
+    <div class="modal-header"><h3 id="modal-title">Nouveau plat</h3></div>
+    <form onsubmit="submitMenu(event)">
+      <input type="hidden" id="menu-id">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="form-group" style="grid-column:1/-1">
+          <label>Nom du plat *</label>
+          <input type="text" id="m-name" placeholder="Ex: Attiéké Poisson" required>
+        </div>
+        <div class="form-group">
+          <label>Catégorie *</label>
+          <input type="text" id="m-category" placeholder="Ex: Plats principaux" list="cat-list" required>
+          <datalist id="cat-list"></datalist>
+        </div>
+        <div class="form-group">
+          <label>Prix normal (FCFA) *</label>
+          <input type="number" id="m-price" placeholder="2500" min="0" required>
+        </div>
+        <div class="form-group">
+          <label>Prix promo (FCFA)</label>
+          <input type="number" id="m-promo-price" placeholder="Laisser vide si pas de promo" min="0">
+        </div>
+        <div class="form-group">
+          <label style="display:flex;align-items:center;gap:8px">
+            <input type="checkbox" id="m-is-promo" style="width:auto"> En promotion
+          </label>
+        </div>
+        <div class="form-group">
+          <label style="display:flex;align-items:center;gap:8px">
+            <input type="checkbox" id="m-is-new" style="width:auto"> Nouveau plat
+          </label>
+        </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label>Description</label>
+          <textarea id="m-desc" placeholder="Décrivez ce plat, ses ingrédients, sa saveur..." rows="3"></textarea>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-top:4px">
+        <div class="form-group">
+          <label>Image principale *</label>
+          <div class="upload-zone" style="padding:16px" onclick="document.getElementById('m-img1').click()">
+            <input type="file" id="m-img1" accept="image/*" style="display:none" onchange="previewFile(this,'prev-img1')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:block;margin:0 auto 6px"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            <p style="font-size:12px">Image 1</p>
+            <div id="prev-img1" class="upload-preview"></div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Image secondaire</label>
+          <div class="upload-zone" style="padding:16px" onclick="document.getElementById('m-img2').click()">
+            <input type="file" id="m-img2" accept="image/*" style="display:none" onchange="previewFile(this,'prev-img2')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:block;margin:0 auto 6px"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            <p style="font-size:12px">Image 2</p>
+            <div id="prev-img2" class="upload-preview"></div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Vidéo (optionnel)</label>
+          <div class="upload-zone" style="padding:16px" onclick="document.getElementById('m-video').click()">
+            <input type="file" id="m-video" accept="video/*" style="display:none" onchange="previewFile(this,'prev-video')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:block;margin:0 auto 6px"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+            <p style="font-size:12px">Vidéo</p>
+            <div id="prev-video" class="upload-preview"></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px;margin-top:12px">
+        <button type="submit" class="btn-primary" id="menu-submit-btn" style="flex:1;justify-content:center">Sauvegarder</button>
+        <button type="button" class="btn-outline" onclick="closeModal()">Annuler</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="toast-container"></div>
+<script src="../../js/app.js"></script>
+<script src="../../js/admin-layout.js"></script>
+<script>
+  const hostname = window.location.hostname || 'localhost';
+  const BASE = (window.location.protocol === 'https:' || window.location.protocol === 'http:')
+    ? `${window.location.protocol}//${hostname}:5000`
+    : `http://${hostname}:5000`;
+  let allMenus = [];
+  let editingId = null;
+
+  initAdminLayout('menus');
+  loadMenus();
+
+  async function loadMenus() {
+    try {
+      const [menus, cats] = await Promise.all([apiFetch('/menus/admin/all'), apiFetch('/menus/categories')]);
+      allMenus = menus;
+      document.getElementById('menu-count').textContent = menus.length;
+      // Populate cat filter
+      const cf = document.getElementById('cat-filter');
+      cf.innerHTML = '<option value="">Toutes catégories</option>' + cats.map(c => `<option value="${c}">${c}</option>`).join('');
+      const dl = document.getElementById('cat-list');
+      dl.innerHTML = cats.map(c => `<option value="${c}">`).join('');
+      renderTable(menus);
+    } catch(e) { showToast('Erreur de chargement', 'error'); }
+  }
+
+  function filterTable() {
+    const q = document.getElementById('search-menu').value.toLowerCase();
+    const cat = document.getElementById('cat-filter').value;
+    const filtered = allMenus.filter(m => {
+      const matchQ = !q || m.name.toLowerCase().includes(q);
+      const matchCat = !cat || m.category === cat;
+      return matchQ && matchCat;
+    });
+    renderTable(filtered);
+  }
+
+  function renderTable(menus) {
+    const tbody = document.getElementById('menus-table');
+    if (!menus.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--gray)">Aucun plat trouvé</td></tr>'; return; }
+    tbody.innerHTML = menus.map(m => {
+      const price = m.isPromo && m.promoPrice ? m.promoPrice : m.price;
+      const img = m.image1 ? `${BASE}${m.image1}` : '';
+      return `<tr>
+        <td>${img ? `<img src="${img}" class="table-img" onerror="this.style.display='none'">` : '<div style="width:48px;height:48px;background:var(--gray-pale);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--gray-light)">?</div>'}</td>
+        <td>
+          <strong>${m.name}</strong><br>
+          <span style="font-size:12px;color:var(--gray)">${(m.description||'').slice(0,50)}${(m.description||'').length>50?'...':''}</span>
+          <div style="display:flex;gap:4px;margin-top:4px">
+            ${m.isPromo ? '<span class="badge badge-promo" style="font-size:10px;padding:2px 6px">Promo</span>' : ''}
+            ${m.isNew ? '<span class="badge badge-new" style="font-size:10px;padding:2px 6px">Nouveau</span>' : ''}
+            ${m.video ? '<span style="background:#E3F2FD;color:#1565C0;font-size:10px;padding:2px 6px;border-radius:6px;font-weight:700">VIDEO</span>' : ''}
+          </div>
+        </td>
+        <td><span class="badge-category">${m.category}</span></td>
+        <td>
+          <strong style="color:var(--green-dark)">${price.toLocaleString()} FCFA</strong>
+          ${m.isPromo && m.promoPrice ? `<br><span style="font-size:11px;color:var(--gray-light);text-decoration:line-through">${m.price.toLocaleString()}</span>` : ''}
+        </td>
+        <td><span class="status-badge ${m.isAvailable ? 'status-confirmed' : 'status-cancelled'}">${m.isAvailable ? 'Disponible' : 'Indisponible'}</span></td>
+        <td class="table-actions">
+          <button class="btn-sm btn-sm-edit" onclick="openEditModal('${m._id}')">Modifier</button>
+          <button class="btn-sm ${m.isAvailable?'btn-sm-gold':'btn-sm-green'}" onclick="toggleAvail('${m._id}',${!m.isAvailable})">${m.isAvailable?'Désactiver':'Activer'}</button>
+          <button class="btn-sm btn-sm-del" onclick="deleteMenu('${m._id}')">Suppr.</button>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  function previewFile(input, previewId) {
+    const file = input.files[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    const el = document.getElementById(previewId);
+    if (file.type.startsWith('video')) el.innerHTML = `<video src="${url}" controls style="max-height:80px;border-radius:4px"></video>`;
+    else el.innerHTML = `<img src="${url}" style="max-height:80px;border-radius:4px">`;
+  }
+
+  function openAddModal() {
+    editingId = null;
+    document.getElementById('modal-title').textContent = 'Nouveau plat';
+    ['m-name','m-category','m-price','m-promo-price','m-desc'].forEach(id => document.getElementById(id).value = '');
+    ['m-is-promo','m-is-new'].forEach(id => document.getElementById(id).checked = false);
+    ['prev-img1','prev-img2','prev-video'].forEach(id => document.getElementById(id).innerHTML = '');
+    ['m-img1','m-img2','m-video'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('menu-modal').classList.add('open');
+  }
+
+  async function openEditModal(id) {
+    const m = allMenus.find(x => x._id === id);
+    if (!m) return;
+    editingId = id;
+    document.getElementById('modal-title').textContent = 'Modifier le plat';
+    document.getElementById('m-name').value = m.name;
+    document.getElementById('m-category').value = m.category;
+    document.getElementById('m-price').value = m.price;
+    document.getElementById('m-promo-price').value = m.promoPrice || '';
+    document.getElementById('m-desc').value = m.description || '';
+    document.getElementById('m-is-promo').checked = m.isPromo;
+    document.getElementById('m-is-new').checked = m.isNew;
+    // Show existing media
+    const showExisting = (field, previewId) => {
+      if (m[field]) document.getElementById(previewId).innerHTML = field === 'video'
+        ? `<video src="${BASE}${m[field]}" style="max-height:80px" controls></video><p style="font-size:10px;color:var(--gray);margin-top:2px">Existant</p>`
+        : `<img src="${BASE}${m[field]}" style="max-height:80px"><p style="font-size:10px;color:var(--gray);margin-top:2px">Existant</p>`;
+    };
+    showExisting('image1', 'prev-img1');
+    showExisting('image2', 'prev-img2');
+    showExisting('video', 'prev-video');
+    document.getElementById('menu-modal').classList.add('open');
+  }
+
+  function closeModal() { document.getElementById('menu-modal').classList.remove('open'); }
+
+  async function submitMenu(e) {
+    e.preventDefault();
+    const token = Auth.getToken();
+    if (!token) { showToast('Session expirée, reconnectez-vous.', 'error'); setTimeout(()=>window.location.href='../auth.html', 1500); return; }
+    const btn = document.getElementById('menu-submit-btn');
+    btn.innerHTML = '<span class="loader"></span> Envoi...'; btn.disabled = true;
+    const fd = new FormData();
+    fd.append('name', document.getElementById('m-name').value);
+    fd.append('category', document.getElementById('m-category').value);
+    fd.append('price', document.getElementById('m-price').value);
+    fd.append('promoPrice', document.getElementById('m-promo-price').value || '');
+    fd.append('description', document.getElementById('m-desc').value);
+    fd.append('isPromo', document.getElementById('m-is-promo').checked);
+    fd.append('isNew', document.getElementById('m-is-new').checked);
+    const img1 = document.getElementById('m-img1').files[0];
+    const img2 = document.getElementById('m-img2').files[0];
+    const vid = document.getElementById('m-video').files[0];
+    if (img1) fd.append('image1', img1);
+    if (img2) fd.append('image2', img2);
+    if (vid) fd.append('video', vid);
+    try {
+      const url = editingId ? `${BASE}/api/menus/${editingId}` : `${BASE}/api/menus`;
+      const method = editingId ? 'PUT' : 'POST';
+      const res = await fetch(url, { method, headers: { Authorization: `Bearer ${token}` }, body: fd });
+      const data = await res.json();
+      if (!res.ok) {
+        if (res.status === 401) { showToast('Session expirée, reconnectez-vous.', 'error'); setTimeout(()=>window.location.href='../auth.html', 1500); return; }
+        throw new Error(data.message);
+      }
+      showToast(editingId ? 'Plat mis à jour !' : 'Plat ajouté !');
+      closeModal(); loadMenus();
+    } catch(err) { showToast(err.message, 'error'); }
+    btn.innerHTML = 'Sauvegarder'; btn.disabled = false;
+  }
+
+  async function toggleAvail(id, state) {
+    try {
+      const fd = new FormData(); fd.append('isAvailable', state.toString());
+      const token = Auth.getToken();
+      await fetch(`${BASE}/api/menus/${id}`, { method:'PUT', headers:{Authorization:`Bearer ${token}`}, body:fd });
+      showToast(state ? 'Plat activé' : 'Plat désactivé'); loadMenus();
+    } catch(e) { showToast('Erreur', 'error'); }
+  }
+
+  async function deleteMenu(id) {
+    if (!confirm('Supprimer ce plat ?')) return;
+    try {
+      await apiFetch(`/menus/${id}`, { method:'DELETE' });
+      showToast('Plat supprimé'); loadMenus();
+    } catch(e) { showToast(e.message, 'error'); }
+  }
+
+  document.getElementById('menu-modal').addEventListener('click', e => { if(e.target === document.getElementById('menu-modal')) closeModal(); });
+</script>
+</body>
+</html>

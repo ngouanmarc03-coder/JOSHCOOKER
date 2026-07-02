@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Commander - Josua Cooker</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<nav class="navbar">
+  <a class="navbar-brand" href="../index.html">
+    <img src="../images/logo.png" alt="Josua Cooker" style="height:36px;width:auto;display:block">
+  </a>
+  <button class="hamburger"><span></span><span></span><span></span></button>
+  <div class="navbar-nav">
+    <a href="../index.html">Accueil</a>
+    <a href="menu.html">Menu</a>
+    <button class="theme-toggle"></button>
+    <a id="nav-login" class="btn-login" href="auth.html">Connexion</a>
+    <div id="nav-user" style="display:none;align-items:center;gap:8px;">
+      <span style="font-size:13px;font-weight:600" id="nav-user-name"></span>
+    </div>
+  </div>
+</nav>
+
+<div style="margin-top:65px;background:linear-gradient(135deg,var(--green-dark),var(--green));padding:40px 20px;text-align:center;color:#fff">
+  <h1 style="color:#fff;font-size:clamp(1.6rem,3vw,2.2rem);margin-bottom:8px">Passer une commande</h1>
+  <p style="color:rgba(255,255,255,0.85);font-size:15px">Remplissez le formulaire et effectuez votre dépôt</p>
+</div>
+
+<section class="section">
+  <div class="container">
+    <div id="empty-cart" style="text-align:center;padding:80px 20px;display:none">
+      <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--gray-light)" stroke-width="1.5" style="margin:0 auto 16px"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+      <h3 style="color:var(--gray)">Votre panier est vide</h3>
+      <p style="color:var(--gray-light);margin:8px 0 24px">Ajoutez des plats depuis notre menu</p>
+      <a href="menu.html" class="btn-primary">Voir le menu</a>
+    </div>
+
+    <div id="checkout-content" style="display:grid;grid-template-columns:1fr 380px;gap:32px;align-items:start">
+      <!-- Form -->
+      <div>
+        <div class="admin-card" style="background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);padding:28px;margin-bottom:24px">
+          <h3 style="margin-bottom:20px;display:flex;align-items:center;gap:8px">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Vos informations
+          </h3>
+          <div id="form-alert"></div>
+          <div class="alert alert-info" style="font-size:13px;margin-bottom:20px">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            Vos coordonnées doivent être identiques à celles du dépôt Mobile Money pour validation.
+          </div>
+          <div class="form-group">
+            <label>Nom complet *</label>
+            <input type="text" id="c-name" placeholder="Jean Kouassi">
+          </div>
+          <div class="form-group">
+            <label>Téléphone *</label>
+            <input type="tel" id="c-phone" placeholder="+225 07 00 00 00 00">
+          </div>
+          <div class="form-group">
+            <label>Email (optionnel)</label>
+            <input type="email" id="c-email" placeholder="votre@email.com">
+          </div>
+          <div class="form-group">
+            <label>Notes / Instructions</label>
+            <textarea id="c-notes" placeholder="Allergies, préférences, lieu de livraison..."></textarea>
+          </div>
+        </div>
+
+        <!-- Payment -->
+        <div style="background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);padding:28px">
+          <h3 style="margin-bottom:20px;display:flex;align-items:center;gap:8px">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            Mode de paiement
+          </h3>
+          <div class="payment-methods" id="payment-methods">
+            <div class="payment-method" data-method="wave" onclick="selectPayment('wave',this)">
+              <img id="payment-logo-wave" src="../images/payments/wave.png" alt="Wave CI" style="width:48px;height:48px;object-fit:contain;border-radius:10px;margin:0 auto 6px">
+              <span>Wave CI</span>
+            </div>
+            <div class="payment-method" data-method="orange" onclick="selectPayment('orange',this)">
+              <img id="payment-logo-orange" src="../images/payments/orange-money.png" alt="Orange Money" style="width:48px;height:48px;object-fit:contain;border-radius:10px;margin:0 auto 6px">
+              <span>Orange Money</span>
+            </div>
+            <div class="payment-method" data-method="moov" onclick="selectPayment('moov',this)">
+              <img id="payment-logo-moov" src="../images/payments/moov.png" alt="Moov Money" style="width:48px;height:48px;object-fit:contain;border-radius:10px;margin:0 auto 6px">
+              <span>Moov Money</span>
+            </div>
+          </div>
+
+          <div id="payment-info" style="display:none;margin-top:20px">
+            <div class="alert alert-success">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+              <div>
+                <strong>Numéro de dépôt :</strong>
+                <div id="payment-number" style="font-size:20px;font-weight:900;margin-top:4px;color:var(--green-dark)"></div>
+                <p style="font-size:12px;margin-top:4px">Effectuez votre dépôt sur ce numéro puis soumettez votre commande.</p>
+              </div>
+            </div>
+            <div class="form-group" style="margin-top:12px">
+              <label>Numéro depuis lequel vous avez fait le dépôt *</label>
+              <input type="tel" id="c-payment-num" placeholder="Le numéro utilisé pour le dépôt">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Summary -->
+      <div style="background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);padding:24px;position:sticky;top:85px">
+        <h3 style="margin-bottom:16px;display:flex;align-items:center;gap:8px">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+          Résumé de commande
+        </h3>
+        <div id="order-summary"></div>
+        <div style="border-top:2px solid var(--gold);padding-top:16px;margin-top:16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <span style="color:var(--gray)">Sous-total</span>
+            <span id="summary-subtotal" style="font-weight:700"></span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <span style="color:var(--gray)">Livraison</span>
+            <span style="color:var(--green);font-weight:700">À convenir</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:18px;font-weight:800">Total</span>
+            <span id="summary-total" style="font-size:22px;font-weight:900;color:var(--green-dark)"></span>
+          </div>
+        </div>
+        <button class="btn-gold" style="width:100%;margin-top:20px;justify-content:center;display:flex;align-items:center;gap:8px" onclick="submitOrder()" id="btn-order">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+          Confirmer la commande
+        </button>
+        <p style="font-size:12px;color:var(--gray-light);text-align:center;margin-top:10px">L'admin validera après vérification du dépôt</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Success Modal -->
+<div class="modal-overlay" id="success-modal">
+  <div class="modal" style="text-align:center;max-width:460px">
+    <div style="width:72px;height:72px;background:var(--green-pale);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
+      <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+    </div>
+    <h3 style="color:var(--green-dark);margin-bottom:12px">Commande envoyée !</h3>
+    <p style="color:var(--gray);margin-bottom:8px">Votre commande a été reçue. L'admin va la valider après confirmation de votre dépôt.</p>
+    <p style="font-size:13px;color:var(--gray-light);margin-bottom:24px">Référence : <strong id="order-ref" style="color:var(--green-dark)"></strong></p>
+    <div style="display:flex;gap:12px">
+      <a href="menu.html" class="btn-outline" style="flex:1;text-align:center;display:flex;align-items:center;justify-content:center">Continuer</a>
+      <a href="../index.html" class="btn-primary" style="flex:1;justify-content:center">Accueil</a>
+    </div>
+  </div>
+</div>
+
+<script src="../js/app.js"></script>
+<script>
+  const hostname = window.location.hostname || 'localhost';
+  const BASE = (window.location.protocol === 'https:' || window.location.protocol === 'http:')
+    ? `${window.location.protocol}//${hostname}:5000`
+    : `http://${hostname}:5000`;
+  let selectedPayment = null;
+  let settings = null;
+
+  async function initCheckout() {
+    settings = await getSettings();
+    updatePaymentLogos();
+    const items = Cart.get();
+    if (!items.length) {
+      document.getElementById('empty-cart').style.display = 'block';
+      document.getElementById('checkout-content').style.display = 'none';
+      return;
+    }
+    renderSummary(items);
+    // Pre-fill if logged in
+    const user = Auth.getUser();
+    if (user) {
+      document.getElementById('c-name').value = user.name || '';
+      document.getElementById('c-email').value = user.email || '';
+    }
+  }
+
+  function updatePaymentLogos() {
+    const toSrc = url => url && url.startsWith('http') ? url : `${BASE}${url}`;
+    if (settings?.waveLogoUrl) {
+      const img = document.getElementById('payment-logo-wave');
+      if (img) img.src = toSrc(settings.waveLogoUrl);
+    }
+    if (settings?.orangeLogoUrl) {
+      const img = document.getElementById('payment-logo-orange');
+      if (img) img.src = toSrc(settings.orangeLogoUrl);
+    }
+    if (settings?.moovLogoUrl) {
+      const img = document.getElementById('payment-logo-moov');
+      if (img) img.src = toSrc(settings.moovLogoUrl);
+    }
+  }
+
+  function renderSummary(items) {
+    const container = document.getElementById('order-summary');
+    container.innerHTML = items.map(item => {
+      const price = item.isPromo && item.promoPrice ? item.promoPrice : item.price;
+      const img = item.image1 ? `${BASE}${item.image1}` : '../images/placeholder.jpg';
+      return `<div style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--gray-pale)">
+        <img src="${img}" style="width:48px;height:48px;object-fit:cover;border-radius:6px" onerror="this.src='../images/placeholder.jpg'">
+        <div style="flex:1">
+          <div style="font-size:14px;font-weight:600">${item.name}</div>
+          <div style="font-size:12px;color:var(--gray)">x${item.qty || 1}</div>
+        </div>
+        <div style="font-size:14px;font-weight:700;color:var(--green-dark)">${((price)*(item.qty||1)).toLocaleString()} FCFA</div>
+      </div>`;
+    }).join('');
+    const total = Cart.total();
+    document.getElementById('summary-subtotal').textContent = total.toLocaleString() + ' FCFA';
+    document.getElementById('summary-total').textContent = total.toLocaleString() + ' FCFA';
+  }
+
+  function selectPayment(method, el) {
+    selectedPayment = method;
+    document.querySelectorAll('.payment-method').forEach(e => e.classList.remove('selected'));
+    el.classList.add('selected');
+    const nums = { wave: settings?.waveNumber, orange: settings?.orangeNumber, moov: settings?.moovNumber };
+    document.getElementById('payment-number').textContent = nums[method] || 'Numéro non configuré';
+    document.getElementById('payment-info').style.display = 'block';
+  }
+
+  async function submitOrder() {
+    const name = document.getElementById('c-name').value.trim();
+    const phone = document.getElementById('c-phone').value.trim();
+    const email = document.getElementById('c-email').value.trim();
+    const notes = document.getElementById('c-notes').value.trim();
+    const payNum = document.getElementById('c-payment-num').value.trim();
+
+    if (!name || !phone) return showToast('Nom et téléphone requis', 'error');
+    if (!selectedPayment) return showToast('Choisissez un mode de paiement', 'error');
+    if (!payNum) return showToast('Indiquez votre numéro de dépôt', 'error');
+
+    const items = Cart.get();
+    if (!items.length) return showToast('Panier vide', 'error');
+
+    const btn = document.getElementById('btn-order');
+    btn.innerHTML = '<span class="loader" style="border-color:rgba(0,0,0,0.2);border-top-color:#000"></span> Envoi...';
+    btn.disabled = true;
+
+    try {
+      const user = Auth.getUser();
+      const payload = {
+        customerName: name, customerPhone: phone, customerEmail: email,
+        items: items.map(i => ({ menuId: i._id, name: i.name, price: i.isPromo && i.promoPrice ? i.promoPrice : i.price, quantity: i.qty || 1, image: i.image1 })),
+        totalAmount: Cart.total(), paymentMethod: selectedPayment,
+        paymentNumber: payNum, notes, userId: user?.id || null
+      };
+      const res = await apiFetch('/orders', { method: 'POST', body: JSON.stringify(payload) });
+      document.getElementById('order-ref').textContent = res.order._id.slice(-8).toUpperCase();
+      document.getElementById('success-modal').classList.add('open');
+      Cart.save([]);
+    } catch(e) {
+      showToast(e.message, 'error');
+      btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Confirmer la commande`;
+      btn.disabled = false;
+    }
+  }
+
+  initCheckout();
+</script>
+</body>
+</html>

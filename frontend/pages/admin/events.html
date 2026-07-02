@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - Événements</title>
+  <link rel="stylesheet" href="../../css/style.css">
+  <link rel="stylesheet" href="../../css/admin.css">
+</head>
+<body>
+<div id="admin-wrapper" class="admin-layout">
+  <main class="admin-main">
+    <div class="admin-topbar">
+      <button class="sidebar-toggle"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+      <div class="topbar-title"><h1>Événements & Promotions</h1><p>Gérez le hero événement de la page d'accueil</p></div>
+      <div class="topbar-actions">
+        <button class="theme-toggle"></button>
+        <button class="btn-primary" onclick="openAddModal()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Ajouter
+        </button>
+      </div>
+    </div>
+    <div class="admin-content">
+      <div class="alert alert-info" style="margin-bottom:20px">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Le premier événement actif s'affiche dans la section "Événements & Promotions" sur la page d'accueil. Désactivez les anciens événements pour en mettre un nouveau.
+      </div>
+      <div id="events-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px">
+        <div style="text-align:center;padding:60px;grid-column:1/-1"><div class="loader" style="border-color:var(--green-pale);border-top-color:var(--green);margin:0 auto"></div></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="modal-overlay" id="event-modal">
+  <div class="modal" style="max-width:560px">
+    <button class="modal-close" onclick="closeModal()">&#10005;</button>
+    <div class="modal-header"><h3 id="modal-title">Ajouter un événement</h3></div>
+    <form onsubmit="submitEvent(event)">
+      <input type="hidden" id="event-id">
+      <div class="form-group">
+        <label>Titre *</label>
+        <input type="text" id="ev-title" placeholder="Ex: Promotion Spéciale Ramadan" required>
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <textarea id="ev-desc" rows="3" placeholder="Détails de l'événement ou promotion..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>Réduction / Badge</label>
+        <input type="text" id="ev-discount" placeholder="Ex: -30% sur tous les plats">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="form-group">
+          <label>Date de début</label>
+          <input type="date" id="ev-start">
+        </div>
+        <div class="form-group">
+          <label>Date de fin</label>
+          <input type="date" id="ev-end">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Image ou Vidéo *</label>
+        <div class="upload-zone" onclick="document.getElementById('ev-media').click()">
+          <input type="file" id="ev-media" accept="image/*,video/*" style="display:none" onchange="previewMedia(this)">
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="display:block;margin:0 auto 8px"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          <p><strong>Cliquez pour choisir</strong> une image ou vidéo</p>
+          <div id="ev-preview" class="upload-preview"></div>
+        </div>
+      </div>
+      <div style="display:flex;gap:12px">
+        <button type="submit" class="btn-primary" id="ev-submit" style="flex:1;justify-content:center">Sauvegarder</button>
+        <button type="button" class="btn-outline" onclick="closeModal()">Annuler</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="toast-container"></div>
+<script src="../../js/app.js"></script>
+<script src="../../js/admin-layout.js"></script>
+<script>
+  const hostname = window.location.hostname || 'localhost';
+  const BASE = (window.location.protocol === 'https:' || window.location.protocol === 'http:')
+    ? `${window.location.protocol}//${hostname}:5000`
+    : `http://${hostname}:5000`;
+  let editingId = null;
+
+  initAdminLayout('events');
+  loadEvents();
+
+  async function loadEvents() {
+    try {
+      const events = await apiFetch('/events/admin/all');
+      const grid = document.getElementById('events-grid');
+      if (!events.length) { grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;padding:60px;color:var(--gray)">Aucun événement. Cliquez sur "Ajouter".</p>'; return; }
+      grid.innerHTML = events.map(ev => `
+        <div style="background:var(--white);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);border:2px solid ${ev.isActive?'var(--green)':'var(--gray-pale)'}">
+          <div style="position:relative;height:200px;background:var(--gray-pale)">
+            ${ev.mediaType==='video'
+              ? `<video src="${BASE}${ev.mediaUrl}" style="width:100%;height:100%;object-fit:cover" muted></video>`
+              : `<img src="${BASE}${ev.mediaUrl}" style="width:100%;height:100%;object-fit:cover">`
+            }
+            ${ev.isActive ? '<span style="position:absolute;top:8px;left:8px;background:var(--green);color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:10px">ACTIF</span>' : ''}
+            ${ev.discount ? `<div style="position:absolute;bottom:8px;left:8px;background:var(--gold);color:#000;font-size:14px;font-weight:900;padding:4px 12px;border-radius:8px">${ev.discount}</div>` : ''}
+          </div>
+          <div style="padding:16px">
+            <h4 style="font-size:15px;margin-bottom:4px">${ev.title}</h4>
+            <p style="font-size:13px;color:var(--gray);margin-bottom:12px">${(ev.description||'').slice(0,80)}</p>
+            ${ev.startDate||ev.endDate ? `<p style="font-size:12px;color:var(--gray-light)">
+              ${ev.startDate?new Date(ev.startDate).toLocaleDateString('fr-FR'):''} 
+              ${ev.endDate?' - '+new Date(ev.endDate).toLocaleDateString('fr-FR'):''}
+            </p>` : ''}
+            <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
+              <button class="btn-sm btn-sm-edit" onclick="openEditModal('${ev._id}')">Modifier</button>
+              <button class="btn-sm ${ev.isActive?'btn-sm-gold':'btn-sm-green'}" onclick="toggleActive('${ev._id}',${!ev.isActive})">${ev.isActive?'Désactiver':'Activer'}</button>
+              <button class="btn-sm btn-sm-del" onclick="deleteEvent('${ev._id}')">Suppr.</button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    } catch(e) { showToast('Erreur chargement','error'); }
+  }
+
+  function previewMedia(input) {
+    const file = input.files[0]; if (!file) return;
+    const url = URL.createObjectURL(file);
+    document.getElementById('ev-preview').innerHTML = file.type.startsWith('video')
+      ? `<video src="${url}" controls style="max-height:120px;border-radius:6px"></video>`
+      : `<img src="${url}" style="max-height:120px;border-radius:6px">`;
+  }
+
+  function openAddModal() {
+    editingId = null;
+    document.getElementById('modal-title').textContent = 'Ajouter un événement';
+    ['ev-title','ev-desc','ev-discount','ev-start','ev-end'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('ev-preview').innerHTML='';
+    document.getElementById('ev-media').value='';
+    document.getElementById('event-modal').classList.add('open');
+  }
+
+  async function openEditModal(id) {
+    const events = await apiFetch('/events/admin/all');
+    const ev = events.find(x=>x._id===id); if (!ev) return;
+    editingId = id;
+    document.getElementById('modal-title').textContent = 'Modifier l\'événement';
+    document.getElementById('ev-title').value = ev.title;
+    document.getElementById('ev-desc').value = ev.description||'';
+    document.getElementById('ev-discount').value = ev.discount||'';
+    document.getElementById('ev-start').value = ev.startDate?ev.startDate.slice(0,10):'';
+    document.getElementById('ev-end').value = ev.endDate?ev.endDate.slice(0,10):'';
+    const prev = document.getElementById('ev-preview');
+    if (ev.mediaType==='video') prev.innerHTML=`<video src="${BASE}${ev.mediaUrl}" controls style="max-height:120px;border-radius:6px"></video>`;
+    else prev.innerHTML=`<img src="${BASE}${ev.mediaUrl}" style="max-height:120px;border-radius:6px">`;
+    document.getElementById('event-modal').classList.add('open');
+  }
+
+  function closeModal() { document.getElementById('event-modal').classList.remove('open'); }
+
+  async function submitEvent(e) {
+    e.preventDefault();
+    const token = Auth.getToken();
+    if (!token) { showToast('Session expirée, reconnectez-vous.', 'error'); setTimeout(()=>window.location.href='../auth.html', 1500); return; }
+    const file = document.getElementById('ev-media').files[0];
+    if (!editingId && !file) return showToast('Choisissez une image ou vidéo','error');
+    const btn = document.getElementById('ev-submit');
+    btn.innerHTML='<span class="loader"></span> Envoi...'; btn.disabled=true;
+    const fd = new FormData();
+    if (file) fd.append('media', file);
+    fd.append('title', document.getElementById('ev-title').value);
+    fd.append('description', document.getElementById('ev-desc').value);
+    fd.append('discount', document.getElementById('ev-discount').value);
+    fd.append('startDate', document.getElementById('ev-start').value);
+    fd.append('endDate', document.getElementById('ev-end').value);
+    try {
+      const url = editingId ? `${BASE}/api/events/${editingId}` : `${BASE}/api/events`;
+      const res = await fetch(url, { method: editingId?'PUT':'POST', headers:{Authorization:`Bearer ${token}`}, body:fd });
+      const data = await res.json();
+      if (!res.ok) {
+        if (res.status === 401) { showToast('Session expirée, reconnectez-vous.', 'error'); setTimeout(()=>window.location.href='../auth.html', 1500); return; }
+        throw new Error(data.message);
+      }
+      showToast(editingId?'Événement mis à jour !':'Événement ajouté !');
+      closeModal(); loadEvents();
+    } catch(err) { showToast(err.message,'error'); }
+    btn.innerHTML='Sauvegarder'; btn.disabled=false;
+  }
+
+  async function toggleActive(id, state) {
+    try {
+      const fd = new FormData(); fd.append('isActive', state.toString());
+      const token = Auth.getToken();
+      await fetch(`${BASE}/api/events/${id}`, { method:'PUT', headers:{Authorization:`Bearer ${token}`}, body:fd });
+      showToast(state?'Activé':'Désactivé'); loadEvents();
+    } catch(e) { showToast('Erreur','error'); }
+  }
+
+  async function deleteEvent(id) {
+    if (!confirm('Supprimer cet événement ?')) return;
+    try { await apiFetch(`/events/${id}`,{method:'DELETE'}); showToast('Supprimé'); loadEvents(); }
+    catch(e) { showToast(e.message,'error'); }
+  }
+
+  document.getElementById('event-modal').addEventListener('click', e=>{ if(e.target===document.getElementById('event-modal')) closeModal(); });
+</script>
+</body>
+</html>

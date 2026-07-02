@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - Clients</title>
+  <link rel="stylesheet" href="../../css/style.css">
+  <link rel="stylesheet" href="../../css/admin.css">
+</head>
+<body>
+<div id="admin-wrapper" class="admin-layout">
+  <main class="admin-main">
+    <div class="admin-topbar">
+      <button class="sidebar-toggle"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+      <div class="topbar-title"><h1>Clients</h1><p>Validez les comptes et gérez les clients spéciaux</p></div>
+      <div class="topbar-actions"><button class="theme-toggle"></button><button class="btn-outline" onclick="loadUsers()">Actualiser</button></div>
+    </div>
+    <div class="admin-content">
+      <div class="alert alert-info" style="margin-bottom:20px;font-size:13px">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <div>
+          <strong>Processus de validation :</strong> Un client crée un compte &rarr; Vous validez son compte ici &rarr; Il peut se connecter et commander.
+          Après <strong>10 commandes</strong>, il devient automatiquement Client Spécial. Vous pouvez lui envoyer un code secret pour débloquer son espace exclusif.
+        </div>
+      </div>
+
+      <!-- Pending validation -->
+      <div class="admin-card" style="border-left:4px solid #E53935;margin-bottom:24px">
+        <div class="admin-card-header">
+          <h3 style="display:flex;align-items:center;gap:8px">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E53935" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            En attente de validation (<span id="pending-count">0</span>)
+          </h3>
+        </div>
+        <div id="pending-users"></div>
+      </div>
+
+      <!-- All users -->
+      <div class="admin-card">
+        <div class="admin-card-header">
+          <h3>Tous les clients (<span id="user-count">0</span>)</h3>
+          <div style="display:flex;gap:8px">
+            <input type="text" id="search-user" placeholder="Rechercher..." style="padding:6px 12px;border:1px solid var(--gray-pale);border-radius:6px;font-size:13px" oninput="filterUsers()">
+            <select id="filter-special" onchange="filterUsers()" style="padding:6px 12px;border:1px solid var(--gray-pale);border-radius:6px;font-size:13px">
+              <option value="">Tous</option>
+              <option value="special">Clients Spéciaux</option>
+              <option value="regular">Réguliers</option>
+            </select>
+          </div>
+        </div>
+        <div class="admin-table-wrap">
+          <table>
+            <thead><tr><th>Client</th><th>Téléphone</th><th>Commandes</th><th>Statut</th><th>Inscrit le</th><th>Actions</th></tr></thead>
+            <tbody id="users-table">
+              <tr><td colspan="6" style="text-align:center;padding:40px"><div class="loader" style="margin:0 auto;border-color:var(--green-pale);border-top-color:var(--green)"></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Special Code Modal -->
+<div class="modal-overlay" id="code-modal">
+  <div class="modal" style="max-width:440px">
+    <button class="modal-close" onclick="closeCodeModal()">&#10005;</button>
+    <div class="modal-header">
+      <h3>Envoyer un code secret</h3>
+    </div>
+    <input type="hidden" id="target-user-id">
+    <p style="color:var(--gray);font-size:14px;margin-bottom:20px">Ce code permettra au client d'accéder à son espace Client Spécial avec des réductions exclusives.</p>
+    <div class="form-group">
+      <label>Nom du client</label>
+      <input type="text" id="target-user-name" disabled style="background:var(--gray-pale)">
+    </div>
+    <div class="form-group">
+      <label>Code secret *</label>
+      <input type="text" id="special-code-input" placeholder="Ex: VIP2024JOSUA" style="text-transform:uppercase;letter-spacing:2px;font-weight:700;font-size:16px">
+      <p style="font-size:12px;color:var(--gray-light);margin-top:4px">Partagez ce code avec le client via WhatsApp ou SMS</p>
+    </div>
+    <div style="display:flex;gap:12px">
+      <button class="btn-gold" style="flex:1" onclick="sendSpecialCode()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        Envoyer le code
+      </button>
+      <button class="btn-outline" onclick="closeCodeModal()">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container"></div>
+<script src="../../js/app.js"></script>
+<script src="../../js/admin-layout.js"></script>
+<script>
+  let allUsers = [];
+
+  initAdminLayout('users');
+  loadUsers();
+
+  async function loadUsers() {
+    try {
+      allUsers = await apiFetch('/users/admin/all');
+      const pending = allUsers.filter(u => !u.isValidated);
+      document.getElementById('pending-count').textContent = pending.length;
+      document.getElementById('user-count').textContent = allUsers.length;
+      renderPending(pending);
+      filterUsers();
+    } catch(e) { showToast('Erreur chargement','error'); }
+  }
+
+  function renderPending(users) {
+    const container = document.getElementById('pending-users');
+    if (!users.length) {
+      container.innerHTML = '<p style="text-align:center;padding:20px;color:var(--gray);font-size:14px">Aucun compte en attente de validation.</p>';
+      return;
+    }
+    container.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;padding-top:4px">
+      ${users.map(u => `
+        <div style="border:1px solid var(--gray-pale);border-radius:10px;padding:14px;display:flex;align-items:center;gap:12px">
+          <div style="width:42px;height:42px;border-radius:50%;background:var(--green-pale);display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--green-dark);font-size:16px;flex-shrink:0">${u.name.charAt(0).toUpperCase()}</div>
+          <div style="flex:1;min-width:0">
+            <p style="font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${u.name}</p>
+            <p style="font-size:12px;color:var(--gray)">${u.email}</p>
+            <p style="font-size:12px;color:var(--gray)">${u.phone||''}</p>
+          </div>
+          <button class="btn-sm btn-sm-green" onclick="validateUser('${u._id}')">Valider</button>
+        </div>
+      `).join('')}
+    </div>`;
+  }
+
+  function filterUsers() {
+    const q = document.getElementById('search-user').value.toLowerCase();
+    const sp = document.getElementById('filter-special').value;
+    const filtered = allUsers.filter(u => {
+      const matchQ = !q || u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
+      const matchSp = !sp || (sp === 'special' ? u.isSpecialClient : !u.isSpecialClient);
+      return matchQ && matchSp;
+    });
+    const tbody = document.getElementById('users-table');
+    if (!filtered.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--gray)">Aucun client trouvé</td></tr>'; return; }
+    tbody.innerHTML = filtered.map(u => `<tr>
+      <td>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:36px;height:36px;border-radius:50%;background:${u.isSpecialClient?'var(--gold)':'var(--green-pale)'};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:${u.isSpecialClient?'var(--black)':'var(--green-dark)'};flex-shrink:0">${u.name.charAt(0).toUpperCase()}</div>
+          <div>
+            <p style="font-weight:700;font-size:14px">${u.name}</p>
+            <p style="font-size:12px;color:var(--gray)">${u.email}</p>
+          </div>
+        </div>
+      </td>
+      <td style="font-size:13px">${u.phone||'-'}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="background:var(--green-pale);border-radius:20px;padding:3px 10px;font-size:13px;font-weight:700;color:var(--green-dark)">${u.orderCount||0}</div>
+          <div style="background:var(--gray-pale);border-radius:6px;height:6px;flex:1;overflow:hidden;min-width:60px">
+            <div style="height:100%;background:var(--green);border-radius:6px;width:${Math.min(100,((u.orderCount||0)/10)*100)}%"></div>
+          </div>
+        </div>
+      </td>
+      <td>
+        ${u.isSpecialClient ? '<span class="badge badge-new" style="font-size:11px">Client Spécial</span>' : ''}
+        <span class="status-badge ${u.isValidated ? 'status-confirmed' : 'status-pending'}" style="margin-top:4px;display:inline-block">${u.isValidated ? 'Validé' : 'En attente'}</span>
+      </td>
+      <td style="font-size:12px;color:var(--gray)">${new Date(u.createdAt).toLocaleDateString('fr-FR')}</td>
+      <td class="table-actions">
+        ${!u.isValidated ? `<button class="btn-sm btn-sm-green" onclick="validateUser('${u._id}')">Valider</button>` : ''}
+        <button class="btn-sm btn-sm-gold" onclick="openCodeModal('${u._id}','${u.name.replace(/'/g,"\\'")}')">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          Code VIP
+        </button>
+        <button class="btn-sm btn-sm-del" onclick="deleteUser('${u._id}')">Suppr.</button>
+      </td>
+    </tr>`).join('');
+  }
+
+  async function validateUser(id) {
+    try {
+      await apiFetch(`/users/${id}/validate`, { method:'PUT' });
+      showToast('Compte validé ! Le client peut maintenant se connecter.');
+      loadUsers();
+    } catch(e) { showToast(e.message,'error'); }
+  }
+
+  function openCodeModal(id, name) {
+    document.getElementById('target-user-id').value = id;
+    document.getElementById('target-user-name').value = name;
+    document.getElementById('special-code-input').value = '';
+    document.getElementById('code-modal').classList.add('open');
+  }
+
+  function closeCodeModal() { document.getElementById('code-modal').classList.remove('open'); }
+
+  async function sendSpecialCode() {
+    const id = document.getElementById('target-user-id').value;
+    const code = document.getElementById('special-code-input').value.trim().toUpperCase();
+    if (!code) return showToast('Entrez un code','error');
+    try {
+      await apiFetch(`/users/${id}/special-code`, { method:'POST', body: JSON.stringify({ code }) });
+      showToast('Code envoyé ! Partagez-le avec le client.');
+      closeCodeModal(); loadUsers();
+    } catch(e) { showToast(e.message,'error'); }
+  }
+
+  async function deleteUser(id) {
+    if (!confirm('Supprimer ce client définitivement ?')) return;
+    try {
+      await apiFetch(`/users/${id}`, { method:'DELETE' });
+      showToast('Client supprimé'); loadUsers();
+    } catch(e) { showToast(e.message,'error'); }
+  }
+
+  document.getElementById('code-modal').addEventListener('click', e=>{ if(e.target===document.getElementById('code-modal')) closeCodeModal(); });
+</script>
+</body>
+</html>

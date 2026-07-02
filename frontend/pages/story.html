@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notre histoire - Josua Cooker</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<nav class="navbar">
+  <a class="navbar-brand" href="../index.html">
+    <img src="../images/logo.png" alt="Josua Cooker" style="height:36px;width:auto;display:block">
+  </a>
+  <button class="hamburger"><span></span><span></span><span></span></button>
+  <div class="navbar-nav">
+    <a href="../index.html">Accueil</a>
+    <a href="menu.html">Menu</a>
+    <a href="contact.html">Contact</a>
+    <button class="theme-toggle"></button>
+    <a id="nav-login" class="btn-login" href="auth.html">Connexion</a>
+    <div id="nav-user" style="display:none;align-items:center;gap:8px;">
+      <span style="font-size:13px;font-weight:600" id="nav-user-name"></span>
+      <a href="account.html" style="padding:6px 12px;border-radius:16px;background:var(--green-pale);color:var(--green-dark);font-size:13px;font-weight:600">Mon compte</a>
+      <button onclick="Auth.logout()" style="padding:6px 12px;border-radius:16px;background:none;border:1px solid var(--gray-light);font-size:13px;cursor:pointer;">Déconnexion</button>
+    </div>
+    <div class="cart-icon-wrapper">
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+      <span class="cart-count">0</span>
+    </div>
+  </div>
+</nav>
+
+<div class="cart-overlay" id="cart-overlay"></div>
+<div class="cart-drawer" id="cart-drawer">
+  <div class="cart-drawer-header"><h3>Mon Panier</h3><button class="btn-close-cart">&#10005;</button></div>
+  <div class="cart-items" id="cart-items"></div>
+  <div class="cart-footer">
+    <div class="cart-total"><span>Total</span><span class="amount" id="cart-total">0 FCFA</span></div>
+    <button class="btn-checkout" onclick="window.location.href='checkout.html'">Commander</button>
+  </div>
+</div>
+
+<section class="story-page-hero">
+  <div class="container">
+    <span class="hero-badge">Notre histoire</span>
+    <h1 id="story-page-title">Découvrez l’histoire de Josua Cooker</h1>
+    <p id="story-page-subtitle">Un récit de passion, de tradition et d’authenticité.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container story-page-layout">
+    <div class="story-page-main">
+      <div class="story-media-shell" id="story-page-media"></div>
+      <div class="story-gallery" id="story-gallery"></div>
+    </div>
+    <div>
+      <div class="story-card">
+        <h2>Le récit</h2>
+        <p id="story-page-text">Ajoutez votre contenu depuis l’administration pour raconter votre histoire avec élégance.</p>
+      </div>
+      <div class="story-card">
+        <h3>À savoir</h3>
+        <div id="story-page-details"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer" style="padding:32px 20px">
+  <div style="max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+    <p style="color:rgba(255,255,255,0.7);font-size:13px">&copy; 2024 Josua Cooker</p>
+    <div style="display:flex;gap:16px;">
+      <a href="privacy.html" style="color:rgba(255,255,255,0.6);font-size:13px">Confidentialité</a>
+      <a href="terms.html" style="color:rgba(255,255,255,0.6);font-size:13px">CGU</a>
+      <a href="contact.html" style="color:rgba(255,255,255,0.6);font-size:13px">Contact</a>
+    </div>
+  </div>
+</footer>
+
+<script src="../js/app.js"></script>
+<script>
+  const hostname = window.location.hostname || 'localhost';
+  const BASE = (window.location.protocol === 'https:' || window.location.protocol === 'http:')
+    ? `${window.location.protocol}//${hostname}:5000`
+    : `http://${hostname}:5000`;
+
+  async function loadStoryPage() {
+    try {
+      const settings = await apiFetch('/settings');
+      document.getElementById('story-page-title').textContent = settings.storyTitle || 'Découvrez l’histoire de Josua Cooker';
+      document.getElementById('story-page-subtitle').textContent = settings.storySubtitle || 'Un récit de passion, de tradition et d’authenticité.';
+      document.getElementById('story-page-text').textContent = settings.storyText || 'Ajoutez votre contenu depuis l’administration pour raconter votre histoire avec élégance.';
+      const details = settings.storyDetails ? settings.storyDetails.split('\n').filter(Boolean) : [];
+      const detailsContainer = document.getElementById('story-page-details');
+      detailsContainer.innerHTML = details.length ? `<ul>${details.map(item => `<li>${item}</li>`).join('')}</ul>` : '<p>Aucune information supplémentaire n’a encore été ajoutée.</p>';
+      const mainImage = settings.storyImageUrl ? `${BASE}${settings.storyImageUrl}` : '../images/placeholder.jpg';
+      const mainVideo = settings.storyVideoUrl ? (settings.storyVideoUrl.startsWith('http') ? settings.storyVideoUrl : `${BASE}${settings.storyVideoUrl}`) : '';
+      const mediaContainer = document.getElementById('story-page-media');
+      if (mainVideo) {
+        mediaContainer.innerHTML = `<video autoplay muted loop playsinline preload="metadata" poster="${mainImage}"><source src="${mainVideo}"></video>`;
+      } else {
+        mediaContainer.innerHTML = `<img src="${mainImage}" alt="Notre histoire">`;
+      }
+      const gallery = [settings.storyImage2Url, settings.storyImage3Url].filter(Boolean);
+      const galleryContainer = document.getElementById('story-gallery');
+      if (gallery.length) {
+        galleryContainer.innerHTML = gallery.map(img => `<img src="${BASE}${img}" alt="Photo de l’histoire" onerror="this.src='../images/placeholder.jpg'">`).join('');
+      } else {
+        galleryContainer.innerHTML = '';
+      }
+    } catch (e) {}
+  }
+
+  document.addEventListener('DOMContentLoaded', loadStoryPage);
+</script>
+</body>
+</html>
